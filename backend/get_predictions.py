@@ -3,11 +3,11 @@ import pandas as pd
 from pyod.models.iforest import IForest
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import timedelta
 
 app = Flask(__name__)
 
 # Load the trained model
-# Assuming df_withdrawals is the preprocessed DataFrame and clf is the trained model
 anomaly_proportion = 0.001
 clf_name = 'Anomaly Detection - Isolation Forest'
 clf = IForest(contamination=anomaly_proportion)
@@ -16,8 +16,24 @@ clf = IForest(contamination=anomaly_proportion)
 xx, yy = np.meshgrid(np.linspace(0, 11, 200), np.linspace(0, 180000, 200))
 Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])*-1
 Z = Z.reshape(xx.shape)
-threshold = (df_withdrawals.loc[df_withdrawals['y_pred'] == 1, 'y_scores'].min(
-)*-1)/2 + (df_withdrawals.loc[df_withdrawals['y_pred'] == 0, 'y_scores'].max()*-1)/2
+
+threshold = 0  # Placeholder for threshold value
+
+
+def filter_features(df):
+    df = df[['date', 'account_id', 'type', 'amount']]
+    df['date'] = pd.to_datetime(df['date'], format='%y%m%d')
+    return df
+
+
+def preprocess_data(df):
+    df = df[df['type'] == 'WITHDRAWAL']
+    df.sort_values(by='account_id', inplace=True)
+    df['sum_5days'] = df.groupby('account_id')['amount'].transform(
+        lambda s: s.rolling(timedelta(days=5)).sum())
+    df['count_5days'] = df.groupby('account_id')['amount'].transform(
+        lambda s: s.rolling(timedelta(days=5)).count())
+    return df
 
 
 @app.route('/preprocess', methods=['POST'])
@@ -26,16 +42,9 @@ def preprocess_data():
     # Assuming data contains a CSV file with the same structure as df_withdrawals
     df = pd.read_csv(data['csv_file'])
 
-    # Apply preprocessing steps
-    df['date'] = pd.to_datetime(df['date'], format='%y%m%d')
-    df['type'] = df['type'].replace(
-        {'PRIJEM': 'CREDIT', 'VYDAJ': 'WITHDRAWAL', 'VYBER': 'NOT SURE'})
-    df = df.query('type == "WITHDRAWAL"').sort_values(
-        by=['account_id', 'date']).set_index('date')
-    df['sum_5days'] = df.groupby('account_id')['amount'].transform(
-        lambda s: s.rolling(timedelta(days=5)).sum())
-    df['count_5days'] = df.groupby('account_id')['amount'].transform(
-        lambda s: s.rolling(timedelta(days=5)).count())
+    # Apply filtering and preprocessing steps
+    df = filter_features(df)
+    df = preprocess_data(df)
 
     return jsonify({'message': 'Preprocessing completed.'})
 

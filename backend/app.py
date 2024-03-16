@@ -1,21 +1,22 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import pandas as pd
-from pyod.models.iforest import IForest
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 from datetime import timedelta
 
 app = Flask(__name__)
 
 # Load the trained model
-anomaly_proportion = 0.001
-clf_name = 'Anomaly Detection - Isolation Forest'
-clf = IForest(contamination=anomaly_proportion)
+with open('D:\Hack-O-Hire\models\model.pkl', 'rb') as f:
+    clf = pickle.load(f)
 
 # Assuming xx, yy, Z, threshold are calculated as per your provided code
 xx, yy = np.meshgrid(np.linspace(0, 11, 200), np.linspace(0, 180000, 200))
 Z = np.zeros_like(xx)  # Placeholder for Z
 threshold = 0  # Placeholder for threshold value
+
+# Define filter_features and preprocess_data functions
 
 
 def filter_features(df):
@@ -34,59 +35,34 @@ def preprocess_data(df):
     return df
 
 
-@app.route('/train', methods=['POST'])
-def train_model():
-    data = request.get_json()
-    # Assuming data contains a CSV file with the same structure as df_withdrawals
-    df = pd.read_csv(data['D:\Web Dev\HoH\server\Hack-O-Hire\data\trans.csv'])
+@app.route('/predict', methods=['POST'])
+def predict_anomalies():
+    # Load CSV data
+    df = pd.read_csv('trans.csv')
 
     # Apply filtering and preprocessing steps
     df = filter_features(df)
     df = preprocess_data(df)
 
-    # Assuming you have a feature matrix X
-    X = df[['count_5days', 'sum_5days']]
-
-    # Train the model
-    clf.fit(X)
-
-    return jsonify({'message': 'Model training completed.'})
-
-
-@app.route('/predict', methods=['POST'])
-def predict_anomalies():
-    data = request.get_json()
-    X = pd.DataFrame(data['data'], columns=['count_5days', 'sum_5days'])
-
     # Predict anomalies
+    X = df[['count_5days', 'sum_5days']]
     y_pred = clf.predict(X)
     y_scores = clf.decision_function(X)
 
-    # Generate plot (assuming Z, xx, yy are defined elsewhere)
+    # Generate plot
     fig, subplot = plt.subplots(1, 1)
-    subplot.contourf(xx, yy, Z, levels=np.linspace(
-        Z.min(), threshold, 10), cmap=plt.cm.Blues_r)
-    a = subplot.contour(xx, yy, Z, levels=[
-                        threshold], linewidths=2, colors='red')
-    subplot.contourf(xx, yy, Z, levels=[threshold, Z.max()], colors='orange')
-    b = subplot.scatter(X[y_pred == 0]['count_5days'], X[y_pred == 0]
-                        ['sum_5days'], c='white', s=20, edgecolor='k')
-    c = subplot.scatter(X[y_pred == 1]['count_5days'], X[y_pred == 1]
-                        ['sum_5days'], c='black', s=20, edgecolor='r')
-    subplot.axis('tight')
-    subplot.legend([a.collections[0], b, c], [
-                   'learned decision function', 'inliers', 'outliers'], loc='upper right')
-    subplot.set_title(clf_name)
-    subplot.set_xlim((0, 11))
-    subplot.set_ylim((0, 180000))
-    subplot.set_xlabel("5-day count of withdrawal transactions.")
-    subplot.set_ylabel("5-day sum of withdrawal transactions")
-
+    # Add your contour plot code here using xx, yy, Z, threshold
+    # Assuming Z, xx, yy are defined elsewhere as per your provided code
     # Save the plot as a PNG file
     plot_filename = 'anomaly_plot.png'
     fig.savefig(plot_filename)
 
-    return jsonify({'y_pred': y_pred.tolist(), 'y_scores': y_scores.tolist(), 'plot_filename': plot_filename})
+    # Save predictions as a JSON file
+    predictions_filename = 'anomaly_predictions.json'
+    predictions_df = pd.DataFrame({'y_pred': y_pred, 'y_scores': y_scores})
+    predictions_df.to_json(predictions_filename, orient='records')
+
+    return jsonify({'y_pred': y_pred.tolist(), 'y_scores': y_scores.tolist(), 'plot_filename': plot_filename, 'predictions_filename': predictions_filename})
 
 
 if __name__ == '__main__':

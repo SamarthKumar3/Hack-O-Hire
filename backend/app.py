@@ -14,9 +14,7 @@ clf = IForest(contamination=anomaly_proportion)
 
 # Assuming xx, yy, Z, threshold are calculated as per your provided code
 xx, yy = np.meshgrid(np.linspace(0, 11, 200), np.linspace(0, 180000, 200))
-Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])*-1
-Z = Z.reshape(xx.shape)
-
+Z = np.zeros_like(xx)  # Placeholder for Z
 threshold = 0  # Placeholder for threshold value
 
 
@@ -36,8 +34,8 @@ def preprocess_data(df):
     return df
 
 
-@app.route('/preprocess', methods=['POST'])
-def preprocess_data():
+@app.route('/train', methods=['POST'])
+def train_model():
     data = request.get_json()
     # Assuming data contains a CSV file with the same structure as df_withdrawals
     df = pd.read_csv(data['D:\Web Dev\HoH\server\Hack-O-Hire\data\trans.csv'])
@@ -46,7 +44,13 @@ def preprocess_data():
     df = filter_features(df)
     df = preprocess_data(df)
 
-    return jsonify({'message': 'Preprocessing completed.'})
+    # Assuming you have a feature matrix X
+    X = df[['count_5days', 'sum_5days']]
+
+    # Train the model
+    clf.fit(X)
+
+    return jsonify({'message': 'Model training completed.'})
 
 
 @app.route('/predict', methods=['POST'])
@@ -58,7 +62,7 @@ def predict_anomalies():
     y_pred = clf.predict(X)
     y_scores = clf.decision_function(X)
 
-    # Generate plot
+    # Generate plot (assuming Z, xx, yy are defined elsewhere)
     fig, subplot = plt.subplots(1, 1)
     subplot.contourf(xx, yy, Z, levels=np.linspace(
         Z.min(), threshold, 10), cmap=plt.cm.Blues_r)

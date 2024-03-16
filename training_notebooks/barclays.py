@@ -77,7 +77,7 @@
 
   sns.countplot(x='count_5days', data=df_new)
 
-  !pip install pyod
+
 
   from pyod.models.iforest import IForest
   from pyod.utils.data import generate_data
@@ -152,9 +152,5 @@
   subplot.set_xlabel("5-day count of withdrawal transactions.")
   subplot.set_ylabel("5-day sum of withdrawal transactions")
 
-  import pickle
-
-  # Assuming 'clf' is your trained model
-  with open('model.pkl', 'wb') as f:
-      pickle.dump(clf, f)
+  plt.show()
 

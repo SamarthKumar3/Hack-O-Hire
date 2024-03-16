@@ -40,7 +40,7 @@ def preprocess_data(df):
 def preprocess_data():
     data = request.get_json()
     # Assuming data contains a CSV file with the same structure as df_withdrawals
-    df = pd.read_csv(data['csv_file'])
+    df = pd.read_csv(data['D:\Web Dev\HoH\server\Hack-O-Hire\data\trans.csv'])
 
     # Apply filtering and preprocessing steps
     df = filter_features(df)

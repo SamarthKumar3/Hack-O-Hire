@@ -1,0 +1,41 @@
+solara-env/
+# Ignore Python bytecode files
+*.pyc
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore editor/IDE files
+.vscode/
+.idea/
+*.iml
+
+# Ignore virtual environments
+venv/
+env/
+env.bak/
+ENV/
+envs/
+
+# Ignore package managers
+node_modules/
+yarn.lock
+package-lock.json
+
+# Ignore compiled files
+*.dll
+*.exe
+*.o
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Ignore system-specific files
+Thumbs.db
+
+# Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/

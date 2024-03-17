@@ -1,15 +1,15 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
+import joblib
 from datetime import timedelta
 
 app = Flask(__name__)
 
 # Load the trained model
-with open('D:\Hack-O-Hire\models\model.pkl', 'rb') as f:
-    clf = pickle.load(f)
+model_path = 'D:/Hack-O-Hire/models/model.joblib'
+clf = joblib.load('D:\Hack-O-Hire\models\model.joblib')
 
 # Assuming xx, yy, Z, threshold are calculated as per your provided code
 xx, yy = np.meshgrid(np.linspace(0, 11, 200), np.linspace(0, 180000, 200))

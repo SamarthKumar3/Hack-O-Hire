@@ -4,3 +4,5 @@ matplotlib
 seaborn
 pyod
 flask
+solara
+streamlit
